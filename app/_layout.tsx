@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 
 import { AuthProvider, useAuth } from '@/src/features/auth/useAuth';
 import { DS, colors, spacing } from '@/src/design-system';
@@ -54,9 +55,11 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootNavigator />
-    </AuthProvider>
+    <ActionSheetProvider>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </ActionSheetProvider>
   );
 }
 
