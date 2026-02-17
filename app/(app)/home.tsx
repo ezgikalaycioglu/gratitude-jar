@@ -7,10 +7,11 @@ import { useAuth } from '@/src/features/auth/useAuth';
 import { JarIllustration } from '@/src/features/entries/JarIllustration';
 import { NoteCardIcon } from '@/src/features/entries/NoteCardIcon';
 import { useEntries } from '@/src/features/entries/useEntries';
-import { formatEntryDateLabel, isToday } from '@/src/lib/date';
+import { formatEntryListTimestamp, isToday } from '@/src/lib/date';
 
-const logoutActionIndex = 0;
-const cancelActionIndex = 1;
+const seeAllActionIndex = 0;
+const logoutActionIndex = 1;
+const cancelActionIndex = 2;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -25,11 +26,16 @@ export default function HomeScreen() {
   const handleMenuPress = () => {
     showActionSheetWithOptions(
       {
-        options: ['Log out', 'Cancel'],
+        options: [`See all Notes· ${totalCount}`, 'Log out', 'Cancel'],
         cancelButtonIndex: cancelActionIndex,
         destructiveButtonIndex: logoutActionIndex,
       },
       async (selectedIndex) => {
+        if (selectedIndex === seeAllActionIndex) {
+          router.push('/(app)/notes');
+          return;
+        }
+
         if (selectedIndex !== logoutActionIndex) {
           return;
         }
@@ -51,7 +57,12 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <DS.Text variant="title">Your Jar 🫙</DS.Text>
-          <DS.Button label="⋯" onPress={handleMenuPress} style={styles.kebabButton} variant="ghost" />
+          <DS.Button
+            label="⋯"
+            onPress={handleMenuPress}
+            style={styles.kebabButton}
+            variant="ghost"
+          />
         </View>
 
         {error ? <DS.Text>{error}</DS.Text> : null}
@@ -61,22 +72,11 @@ export default function HomeScreen() {
         ) : (
           <FlatList
             ListHeaderComponent={
-              <View style={styles.sections}>
-                <DS.Card style={styles.summaryCard}>
-                  <JarIllustration noteCount={todayCount} />
-                  <View style={styles.summaryCopy}>
-                    <DS.Text variant="title">Today&apos;s jar</DS.Text>
-                    <DS.Text>{todayCount} notes today</DS.Text>
-                  </View>
-                </DS.Card>
-                <View style={styles.todayHeaderRow}>
-                  <DS.Text variant="body">Today</DS.Text>
-                  <DS.Button
-                    label={`See all (${totalCount})`}
-                    onPress={() => router.push('/(app)/notes')}
-                    style={styles.seeAllButton}
-                    variant="ghost"
-                  />
+              <View style={styles.summaryHeader}>
+                <JarIllustration noteCount={todayCount} size={spacing.xxl + spacing.lg} />
+                <View style={styles.summaryCopy}>
+                  <DS.Text variant="title">Today&apos;s jar</DS.Text>
+                  <DS.Text>{todayCount} notes today</DS.Text>
                 </View>
               </View>
             }
@@ -100,12 +100,21 @@ export default function HomeScreen() {
                 }
                 style={styles.todayCard}
               >
-                <View style={styles.cardMetaRow}>
-                  <DS.Text variant="caption">{formatEntryDateLabel(item.created_at)}</DS.Text>
-                </View>
                 <View style={styles.noteRow}>
                   <NoteCardIcon index={index} />
-                  <DS.Text style={styles.noteText}>{item.text}</DS.Text>
+                  <View style={styles.noteContent}>
+                    <DS.Text ellipsizeMode="tail" numberOfLines={3} style={styles.noteText}>
+                      {item.text}
+                    </DS.Text>
+                    <View style={styles.cardMetaRow}>
+                      <DS.Text variant="caption" style={styles.timestamp}>
+                        {formatEntryListTimestamp(item.created_at)}
+                      </DS.Text>
+                      <DS.Text variant="caption" style={styles.chevron}>
+                        ›
+                      </DS.Text>
+                    </View>
+                  </View>
                 </View>
               </DS.Card>
             )}
@@ -135,27 +144,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   kebabButton: {
-    minHeight: spacing.sm,
+    minHeight: spacing.touchTargetMin,
+    minWidth: spacing.touchTargetMin,
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
   },
-  sections: {
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  summaryCard: {
+  summaryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
   summaryCopy: {
     flex: 1,
     gap: spacing.xs,
-  },
-  todayHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   todayCard: {
     gap: spacing.xs,
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
   },
   cardMetaRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   noteRow: {
@@ -171,23 +173,28 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: spacing.xs,
   },
+  noteContent: {
+    flex: 1,
+    gap: spacing.xs,
+  },
   noteText: {
     flex: 1,
   },
+  timestamp: {
+    color: colors.textSecondary,
+  },
+  chevron: {
+    color: colors.placeholder,
+  },
   emptyTodayCard: {
     gap: spacing.sm,
-  },
-  seeAllButton: {
-    minHeight: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
   },
   list: {
     flex: 1,
   },
   listContent: {
     gap: spacing.xs,
-    paddingBottom: spacing.xxl + spacing.xxl,
+    paddingBottom: spacing.xxl + spacing.lg,
   },
   fab: {
     position: 'absolute',

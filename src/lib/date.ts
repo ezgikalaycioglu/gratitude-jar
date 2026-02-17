@@ -60,3 +60,13 @@ export function formatEntryDateLabel(value: string): string {
 
   return `${formatShortDate(date)} • ${formatTime(date)}`;
 }
+
+export function formatEntryListTimestamp(value: string | Date): string {
+  const date = toDate(value);
+
+  if (isToday(date)) {
+    return formatTime(date);
+  }
+
+  return `${formatShortDate(date)}, ${formatTime(date)}`;
+}

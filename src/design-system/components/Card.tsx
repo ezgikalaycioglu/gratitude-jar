@@ -36,6 +36,8 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   pressed: {
-    backgroundColor: colors.secondary,
+    borderColor: colors.primary,
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
   },
 });
