@@ -62,7 +62,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.container}>
         <View style={styles.headerRow}>
-          <DS.Text variant="title">Your Jar 🫙</DS.Text>
           <DS.Button
             label="⋯"
             onPress={handleMenuPress}
@@ -146,7 +145,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
   kebabButton: {

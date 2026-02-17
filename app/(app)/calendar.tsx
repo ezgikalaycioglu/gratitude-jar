@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { Alert, SafeAreaView, StyleSheet, View } from 'react-native';
+import { useActionSheet } from '@expo/react-native-action-sheet';
 import { useRouter } from 'expo-router';
 
 import { DS, colors, spacing } from '@/src/design-system';
+import { useAuth } from '@/src/features/auth/useAuth';
 import { useEntries } from '@/src/features/entries/useEntries';
 import {
   buildCalendarMonthGrid,
@@ -13,17 +15,15 @@ import {
 } from '@/src/lib/date';
 
 const daysOfWeekMonday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-function clampCountLabel(count: number): string {
-  if (count > 99) {
-    return '99+';
-  }
-
-  return `${count}`;
-}
+const seeAllActionIndex = 0;
+const calendarActionIndex = 1;
+const logoutActionIndex = 2;
+const cancelActionIndex = 3;
 
 export default function CalendarScreen() {
   const router = useRouter();
+  const { showActionSheetWithOptions } = useActionSheet();
+  const { signOut } = useAuth();
   const { entries, loading, error } = useEntries();
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
@@ -43,6 +43,7 @@ export default function CalendarScreen() {
   }, [entries]);
 
   const monthCells = useMemo(() => buildCalendarMonthGrid(visibleMonth, true), [visibleMonth]);
+  const totalCount = entries.length;
   const monthRows = useMemo(() => {
     const rows: Date[][] = [];
 
@@ -72,12 +73,49 @@ export default function CalendarScreen() {
     router.push({ pathname: '/(app)/notes', params: { date: dayKey } });
   };
 
+  const handleMenuPress = () => {
+    showActionSheetWithOptions(
+      {
+        options: [`See all notes · ${totalCount}`, 'Calendar view', 'Log out', 'Cancel'],
+        cancelButtonIndex: cancelActionIndex,
+        destructiveButtonIndex: logoutActionIndex,
+      },
+      async (selectedIndex) => {
+        if (selectedIndex === seeAllActionIndex) {
+          router.push('/(app)/notes');
+          return;
+        }
+
+        if (selectedIndex === calendarActionIndex) {
+          router.push('/(app)/calendar');
+          return;
+        }
+
+        if (selectedIndex !== logoutActionIndex) {
+          return;
+        }
+
+        const logoutError = await signOut();
+
+        if (logoutError) {
+          Alert.alert('Log out failed', logoutError);
+          return;
+        }
+
+        router.replace('/(auth)/login');
+      },
+    );
+  };
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <DS.Text variant="title">Calendar view</DS.Text>
           <DS.Button label="Back" onPress={() => router.back()} style={styles.backButton} variant="ghost" />
+          <DS.Text variant="title" style={styles.headerTitle}>
+            Calendar view
+          </DS.Text>
+          <DS.Button label="⋯" onPress={handleMenuPress} style={styles.kebabButton} variant="ghost" />
         </View>
 
         {error ? <DS.Text>{error}</DS.Text> : null}
@@ -128,14 +166,6 @@ export default function CalendarScreen() {
                       >
                         {day.getDate()}
                       </DS.Text>
-
-                      {hasNotes ? (
-                        <View style={styles.countBadge}>
-                          <DS.Text variant="caption" style={styles.countBadgeLabel}>
-                            {clampCountLabel(noteCount)}
-                          </DS.Text>
-                        </View>
-                      ) : null}
                     </DS.Card>
                   );
                 })}
@@ -164,9 +194,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.xs,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
   },
   backButton: {
     minHeight: spacing.touchTargetMin,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  kebabButton: {
+    minHeight: spacing.touchTargetMin,
+    minWidth: spacing.touchTargetMin,
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
   },
@@ -211,7 +252,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: spacing.xl,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.xs,
     borderColor: colors.border,
@@ -222,7 +263,8 @@ const styles = StyleSheet.create({
   },
   dayCellWithNotes: {
     borderColor: colors.primary,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primaryDisabled,
+    borderRadius: spacing.xxl,
   },
   todayCell: {
     borderColor: colors.textPrimary,
@@ -232,17 +274,5 @@ const styles = StyleSheet.create({
   },
   dayNumberMuted: {
     color: colors.placeholder,
-  },
-  countBadge: {
-    minWidth: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.sm,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  countBadgeLabel: {
-    color: colors.textOnPrimary,
   },
 });

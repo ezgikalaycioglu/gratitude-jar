@@ -45,7 +45,10 @@ export default function AddEntryScreen() {
             value={text}
             onChangeText={setText}
           />
-          <DS.Button disabled={saving} label={saving ? 'Saving...' : 'Save'} onPress={handleSave} />
+          <View style={styles.actionsRow}>
+            <DS.Button disabled={saving} label="Cancel" onPress={() => router.back()} variant="ghost" />
+            <DS.Button disabled={saving} label={saving ? 'Saving...' : 'Save'} onPress={handleSave} />
+          </View>
         </DS.Card>
       </View>
     </SafeAreaView>
@@ -68,5 +71,8 @@ const styles = StyleSheet.create({
   input: {
     minHeight: spacing.xxl * 3,
     textAlignVertical: 'top',
+  },
+  actionsRow: {
+    gap: spacing.xs,
   },
 });
