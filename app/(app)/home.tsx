@@ -101,10 +101,12 @@ export default function HomeScreen() {
                 style={styles.todayCard}
               >
                 <View style={styles.cardMetaRow}>
-                  <NoteCardIcon index={index} />
                   <DS.Text variant="caption">{formatEntryDateLabel(item.created_at)}</DS.Text>
                 </View>
-                <DS.Text>{item.text}</DS.Text>
+                <View style={styles.noteRow}>
+                  <NoteCardIcon index={index} />
+                  <DS.Text style={styles.noteText}>{item.text}</DS.Text>
+                </View>
               </DS.Card>
             )}
             style={styles.list}
@@ -161,8 +163,16 @@ const styles = StyleSheet.create({
   },
   cardMetaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
+  },
+  noteRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  noteText: {
+    flex: 1,
   },
   emptyTodayCard: {
     gap: spacing.sm,

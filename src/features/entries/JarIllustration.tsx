@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
+import { StyleSheet } from 'react-native';
 
 import { spacing } from '@/src/design-system';
 
@@ -9,14 +9,14 @@ type Props = {
 };
 
 const jarSources = {
-  0: require('../../../assets/images/illustrations/jar-0-notes.svg'),
-  1: require('../../../assets/images/illustrations/jar-1-note.svg'),
-  2: require('../../../assets/images/illustrations/jar-2-notes.svg'),
-  3: require('../../../assets/images/illustrations/jar-3-notes.svg'),
-  4: require('../../../assets/images/illustrations/jar-4-notes.svg'),
-  5: require('../../../assets/images/illustrations/jar-5-notes.svg'),
-  6: require('../../../assets/images/illustrations/jar-6-notes.svg'),
-  full: require('../../../assets/images/illustrations/jar-full.svg'),
+  0: require('../../../assets/images/illustrations/jar-0-notes.png'),
+  1: require('../../../assets/images/illustrations/jar-1-note.png'),
+  2: require('../../../assets/images/illustrations/jar-2-notes.png'),
+  3: require('../../../assets/images/illustrations/jar-3-notes.png'),
+  4: require('../../../assets/images/illustrations/jar-4-notes.png'),
+  5: require('../../../assets/images/illustrations/jar-5-notes.png'),
+  6: require('../../../assets/images/illustrations/jar-6-notes.png'),
+  full: require('../../../assets/images/illustrations/jar-full.png'),
 } as const;
 
 function sourceForCount(noteCount: number) {
