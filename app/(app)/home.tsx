@@ -1,62 +1,21 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
 import { useRouter } from 'expo-router';
-import { Alert, FlatList, SafeAreaView, StyleSheet, View } from 'react-native';
+import { FlatList, SafeAreaView, StyleSheet, View } from 'react-native';
 
 import { DS, colors, spacing } from '@/src/design-system';
-import { useAuth } from '@/src/features/auth/useAuth';
 import { JarIllustration } from '@/src/features/entries/JarIllustration';
 import { NoteCardIcon } from '@/src/features/entries/NoteCardIcon';
 import { useEntries } from '@/src/features/entries/useEntries';
+import { useAppMenu } from '@/src/features/navigation/useAppMenu';
 import { formatEntryListTimestamp, isToday } from '@/src/lib/date';
-
-const seeAllActionIndex = 0;
-const calendarActionIndex = 1;
-const logoutActionIndex = 2;
-const cancelActionIndex = 3;
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { showActionSheetWithOptions } = useActionSheet();
-  const { signOut } = useAuth();
   const { entries, loading, error } = useEntries();
 
   const todaysEntries = entries.filter((entry) => isToday(entry.created_at));
   const todayCount = todaysEntries.length;
   const totalCount = entries.length;
-
-  const handleMenuPress = () => {
-    showActionSheetWithOptions(
-      {
-        options: [`See all notes · ${totalCount}`, 'Calendar view', 'Log out', 'Cancel'],
-        cancelButtonIndex: cancelActionIndex,
-        destructiveButtonIndex: logoutActionIndex,
-      },
-      async (selectedIndex) => {
-        if (selectedIndex === seeAllActionIndex) {
-          router.push('/(app)/notes');
-          return;
-        }
-
-        if (selectedIndex === calendarActionIndex) {
-          router.push('/(app)/calendar');
-          return;
-        }
-
-        if (selectedIndex !== logoutActionIndex) {
-          return;
-        }
-
-        const logoutError = await signOut();
-
-        if (logoutError) {
-          Alert.alert('Log out failed', logoutError);
-          return;
-        }
-
-        router.replace('/(auth)/login');
-      },
-    );
-  };
+  const { openMenu } = useAppMenu({ totalCount, currentScreen: 'home' });
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -64,7 +23,7 @@ export default function HomeScreen() {
         <View style={styles.headerRow}>
           <DS.Button
             label="⋯"
-            onPress={handleMenuPress}
+            onPress={openMenu}
             style={styles.kebabButton}
             variant="ghost"
           />
@@ -128,7 +87,13 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <DS.Fab onPress={() => router.push('/(app)/add-entry')} style={styles.fab} />
+      <DS.Fab
+        accessibilityLabel="Add note"
+        label="Add note"
+        onPress={() => router.push('/(app)/add-entry')}
+        style={styles.fab}
+        variant="pill"
+      />
     </SafeAreaView>
   );
 }
@@ -199,11 +164,11 @@ const styles = StyleSheet.create({
   },
   listContent: {
     gap: spacing.xs,
-    paddingBottom: spacing.xxl + spacing.lg,
+    paddingBottom: spacing.xxl + spacing.xxl,
   },
   fab: {
     position: 'absolute',
-    right: spacing.md,
+    alignSelf: 'center',
     bottom: spacing.md,
   },
 });

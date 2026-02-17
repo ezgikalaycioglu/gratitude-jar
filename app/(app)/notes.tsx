@@ -1,15 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, SafeAreaView, StyleSheet, View } from 'react-native';
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { FlatList, SafeAreaView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { DS, colors, spacing } from '@/src/design-system';
-import { useAuth } from '@/src/features/auth/useAuth';
 import { Entry } from '@/src/features/entries/entries.api';
 import { groupEntriesByRecency, NoteGroup, NoteGroupKey } from '@/src/features/entries/groupEntries';
 import { JarIllustration } from '@/src/features/entries/JarIllustration';
 import { NoteCardIcon } from '@/src/features/entries/NoteCardIcon';
 import { useEntries } from '@/src/features/entries/useEntries';
+import { useAppMenu } from '@/src/features/navigation/useAppMenu';
 import { formatEntryListTimestamp, toLocalDateKey } from '@/src/lib/date';
 
 const initialExpandedState: Record<NoteGroupKey, boolean> = {
@@ -17,10 +16,6 @@ const initialExpandedState: Record<NoteGroupKey, boolean> = {
   thisMonth: false,
   older: false,
 };
-const seeAllActionIndex = 0;
-const calendarActionIndex = 1;
-const logoutActionIndex = 2;
-const cancelActionIndex = 3;
 
 function normalizeDateParam(value?: string | string[]): string | null {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -70,8 +65,6 @@ function formatDateFilterLabel(dateKey: string): string {
 
 export default function NotesScreen() {
   const router = useRouter();
-  const { showActionSheetWithOptions } = useActionSheet();
-  const { signOut } = useAuth();
   const params = useLocalSearchParams<{ date?: string | string[] }>();
   const { entries, loading, error } = useEntries();
   const selectedDate = normalizeDateParam(params.date);
@@ -91,40 +84,7 @@ export default function NotesScreen() {
   const headerTitle = isFilteredByDate
     ? `Notes on ${formatDateFilterLabel(selectedDate)}`
     : 'All notes';
-
-  const handleMenuPress = () => {
-    showActionSheetWithOptions(
-      {
-        options: [`See all notes · ${totalCount}`, 'Calendar view', 'Log out', 'Cancel'],
-        cancelButtonIndex: cancelActionIndex,
-        destructiveButtonIndex: logoutActionIndex,
-      },
-      async (selectedIndex) => {
-        if (selectedIndex === seeAllActionIndex) {
-          router.push('/(app)/notes');
-          return;
-        }
-
-        if (selectedIndex === calendarActionIndex) {
-          router.push('/(app)/calendar');
-          return;
-        }
-
-        if (selectedIndex !== logoutActionIndex) {
-          return;
-        }
-
-        const logoutError = await signOut();
-
-        if (logoutError) {
-          Alert.alert('Log out failed', logoutError);
-          return;
-        }
-
-        router.replace('/(auth)/login');
-      },
-    );
-  };
+  const { openMenu } = useAppMenu({ totalCount, currentScreen: 'notes' });
 
   const toggleSection = (key: NoteGroupKey) => {
     setExpandedSections((current) => ({
@@ -203,7 +163,7 @@ export default function NotesScreen() {
           <DS.Text variant="title" style={styles.headerTitle}>
             {headerTitle}
           </DS.Text>
-          <DS.Button label="⋯" onPress={handleMenuPress} style={styles.kebabButton} variant="ghost" />
+          <DS.Button label="⋯" onPress={openMenu} style={styles.kebabButton} variant="ghost" />
         </View>
 
         {error ? <DS.Text>{error}</DS.Text> : null}

@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Alert, SafeAreaView, StyleSheet, View } from 'react-native';
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { SafeAreaView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { DS, colors, spacing } from '@/src/design-system';
-import { useAuth } from '@/src/features/auth/useAuth';
 import { useEntries } from '@/src/features/entries/useEntries';
+import { useAppMenu } from '@/src/features/navigation/useAppMenu';
 import {
   buildCalendarMonthGrid,
   formatMonthYearLabel,
@@ -15,15 +14,9 @@ import {
 } from '@/src/lib/date';
 
 const daysOfWeekMonday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const seeAllActionIndex = 0;
-const calendarActionIndex = 1;
-const logoutActionIndex = 2;
-const cancelActionIndex = 3;
 
 export default function CalendarScreen() {
   const router = useRouter();
-  const { showActionSheetWithOptions } = useActionSheet();
-  const { signOut } = useAuth();
   const { entries, loading, error } = useEntries();
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
@@ -44,6 +37,7 @@ export default function CalendarScreen() {
 
   const monthCells = useMemo(() => buildCalendarMonthGrid(visibleMonth, true), [visibleMonth]);
   const totalCount = entries.length;
+  const { openMenu } = useAppMenu({ totalCount, currentScreen: 'calendar' });
   const monthRows = useMemo(() => {
     const rows: Date[][] = [];
 
@@ -73,40 +67,6 @@ export default function CalendarScreen() {
     router.push({ pathname: '/(app)/notes', params: { date: dayKey } });
   };
 
-  const handleMenuPress = () => {
-    showActionSheetWithOptions(
-      {
-        options: [`See all notes · ${totalCount}`, 'Calendar view', 'Log out', 'Cancel'],
-        cancelButtonIndex: cancelActionIndex,
-        destructiveButtonIndex: logoutActionIndex,
-      },
-      async (selectedIndex) => {
-        if (selectedIndex === seeAllActionIndex) {
-          router.push('/(app)/notes');
-          return;
-        }
-
-        if (selectedIndex === calendarActionIndex) {
-          router.push('/(app)/calendar');
-          return;
-        }
-
-        if (selectedIndex !== logoutActionIndex) {
-          return;
-        }
-
-        const logoutError = await signOut();
-
-        if (logoutError) {
-          Alert.alert('Log out failed', logoutError);
-          return;
-        }
-
-        router.replace('/(auth)/login');
-      },
-    );
-  };
-
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.container}>
@@ -115,7 +75,7 @@ export default function CalendarScreen() {
           <DS.Text variant="title" style={styles.headerTitle}>
             Calendar view
           </DS.Text>
-          <DS.Button label="⋯" onPress={handleMenuPress} style={styles.kebabButton} variant="ghost" />
+          <DS.Button label="⋯" onPress={openMenu} style={styles.kebabButton} variant="ghost" />
         </View>
 
         {error ? <DS.Text>{error}</DS.Text> : null}
