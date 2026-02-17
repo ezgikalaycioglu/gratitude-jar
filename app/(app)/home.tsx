@@ -10,8 +10,9 @@ import { useEntries } from '@/src/features/entries/useEntries';
 import { formatEntryListTimestamp, isToday } from '@/src/lib/date';
 
 const seeAllActionIndex = 0;
-const logoutActionIndex = 1;
-const cancelActionIndex = 2;
+const calendarActionIndex = 1;
+const logoutActionIndex = 2;
+const cancelActionIndex = 3;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -26,13 +27,18 @@ export default function HomeScreen() {
   const handleMenuPress = () => {
     showActionSheetWithOptions(
       {
-        options: [`See all Notes· ${totalCount}`, 'Log out', 'Cancel'],
+        options: [`See all notes · ${totalCount}`, 'Calendar view', 'Log out', 'Cancel'],
         cancelButtonIndex: cancelActionIndex,
         destructiveButtonIndex: logoutActionIndex,
       },
       async (selectedIndex) => {
         if (selectedIndex === seeAllActionIndex) {
           router.push('/(app)/notes');
+          return;
+        }
+
+        if (selectedIndex === calendarActionIndex) {
+          router.push('/(app)/calendar');
           return;
         }
 

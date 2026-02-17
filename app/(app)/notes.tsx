@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FlatList, SafeAreaView, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { DS, colors, spacing } from '@/src/design-system';
 import { Entry } from '@/src/features/entries/entries.api';
@@ -8,7 +8,7 @@ import { groupEntriesByRecency, NoteGroup, NoteGroupKey } from '@/src/features/e
 import { JarIllustration } from '@/src/features/entries/JarIllustration';
 import { NoteCardIcon } from '@/src/features/entries/NoteCardIcon';
 import { useEntries } from '@/src/features/entries/useEntries';
-import { formatEntryListTimestamp } from '@/src/lib/date';
+import { formatEntryListTimestamp, toLocalDateKey } from '@/src/lib/date';
 
 const initialExpandedState: Record<NoteGroupKey, boolean> = {
   thisWeek: true,
@@ -16,14 +16,73 @@ const initialExpandedState: Record<NoteGroupKey, boolean> = {
   older: false,
 };
 
+function normalizeDateParam(value?: string | string[]): string | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+
+  if (!raw) {
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return null;
+  }
+
+  const [yearText, monthText, dayText] = raw.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return null;
+  }
+
+  const parsed = new Date(year, month - 1, day);
+  if (toLocalDateKey(parsed) !== raw) {
+    return null;
+  }
+
+  return raw;
+}
+
+function formatDateFilterLabel(dateKey: string): string {
+  const [yearText, monthText, dayText] = dateKey.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return dateKey;
+  }
+
+  const localDate = new Date(year, month - 1, day);
+  return localDate.toLocaleString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 export default function NotesScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ date?: string | string[] }>();
   const { entries, loading, error } = useEntries();
+  const selectedDate = normalizeDateParam(params.date);
   const totalCount = entries.length;
   const [expandedSections, setExpandedSections] =
     useState<Record<NoteGroupKey, boolean>>(initialExpandedState);
   const groupedEntries = useMemo(() => groupEntriesByRecency(entries), [entries]);
+  const filteredEntries = useMemo(() => {
+    if (!selectedDate) {
+      return [];
+    }
+
+    return entries.filter((entry) => toLocalDateKey(entry.created_at) === selectedDate);
+  }, [entries, selectedDate]);
   const sectionData = totalCount === 0 ? [] : groupedEntries;
+  const isFilteredByDate = selectedDate !== null;
+  const headerTitle = isFilteredByDate
+    ? `Notes on ${formatDateFilterLabel(selectedDate)}`
+    : 'All notes';
 
   const toggleSection = (key: NoteGroupKey) => {
     setExpandedSections((current) => ({
@@ -98,7 +157,7 @@ export default function NotesScreen() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <DS.Text variant="title">All notes</DS.Text>
+          <DS.Text variant="title">{headerTitle}</DS.Text>
           <DS.Button label="Back" onPress={() => router.back()} style={styles.backButton} variant="ghost" />
         </View>
 
@@ -106,6 +165,15 @@ export default function NotesScreen() {
 
         {loading ? (
           <DS.Text>Loading notes...</DS.Text>
+        ) : isFilteredByDate ? (
+          <FlatList
+            contentContainerStyle={styles.listContent}
+            data={filteredEntries}
+            keyExtractor={(item) => item.id}
+            ListEmptyComponent={<DS.Text>No notes on this date.</DS.Text>}
+            renderItem={({ item, index }) => renderNoteCard(item, index)}
+            style={styles.list}
+          />
         ) : (
           <FlatList
             ListHeaderComponent={

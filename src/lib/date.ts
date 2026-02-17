@@ -28,6 +28,22 @@ function dayBounds(reference: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
+function startOfMonth(reference: Date): Date {
+  const start = new Date(reference);
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function startOfCalendarWeek(reference: Date, startsOnMonday: boolean): Date {
+  const start = new Date(reference);
+  const day = start.getDay();
+  const distance = startsOnMonday ? (day + 6) % 7 : day;
+  start.setDate(start.getDate() - distance);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
 export function formatShortDate(value: string | Date): string {
   const date = toDate(value);
   const month = date.toLocaleString('en-US', { month: 'short' });
@@ -69,4 +85,38 @@ export function formatEntryListTimestamp(value: string | Date): string {
   }
 
   return `${formatShortDate(date)}, ${formatTime(date)}`;
+}
+
+export function toLocalDateKey(value: string | Date): string {
+  const date = toDate(value);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export function formatMonthYearLabel(value: string | Date): string {
+  const date = toDate(value);
+  return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+export function isSameMonth(left: string | Date, right: string | Date): boolean {
+  const leftDate = toDate(left);
+  const rightDate = toDate(right);
+
+  return (
+    leftDate.getFullYear() === rightDate.getFullYear() &&
+    leftDate.getMonth() === rightDate.getMonth()
+  );
+}
+
+export function buildCalendarMonthGrid(month: string | Date, startsOnMonday: boolean): Date[] {
+  const monthStart = startOfMonth(toDate(month));
+  const gridStart = startOfCalendarWeek(monthStart, startsOnMonday);
+  const cells: Date[] = [];
+
+  for (let index = 0; index < 42; index += 1) {
+    const nextCell = new Date(gridStart);
+    nextCell.setDate(gridStart.getDate() + index);
+    cells.push(nextCell);
+  }
+
+  return cells;
 }
